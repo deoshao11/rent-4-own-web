@@ -1,0 +1,52 @@
+# Package Files #
+*/__pycache__/*
+*/*/__pycache__/*
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Ignore auto generated files #
+src/generated
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# IDE related directories #
+.idea*
+*.iml
+*.ipr
+*iws
+
+# Gradle related ignore list #
+!gradle-wrapper.jar
+.gradle
+build
+gradle-app.setting
+gradlew.bat
+
+# Task name cache
+.gradletasknamecache
+
+# Serenity output
+target
+
+# Emacs
+*~
+
+# VS Code
+.classpath
+.project
+.settings/*
+.vscode/*
+vs/*
+
+# Mac
+.DS_Store
+
+# WeK8 & Vault related files
+vaulttoken
+k8s-token
