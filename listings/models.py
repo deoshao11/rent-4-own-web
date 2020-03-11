@@ -28,8 +28,8 @@ class Listing(models.Model):
   is_published = models.BooleanField(default=True)
   list_date = models.DateTimeField(default=datetime.now, blank=True)
   def __str__(self):
-    return str(self.user.username)
+    return str(self.realtor.name)
 
   @property 
   def owner(self):
-    return self.user
+    return self.realtor
