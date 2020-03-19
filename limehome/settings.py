@@ -45,8 +45,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'django.contrib.humanize'
+    'django.contrib.humanize',
+    'jet_django',
 ]
+
+JET_PROJECT = 'sunyi_jet'
+JET_TOKEN = 'c8ee7006-cf9c-4421-84a7-8ca3c6439795'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

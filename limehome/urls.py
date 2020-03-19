@@ -26,6 +26,8 @@ urlpatterns = [
     path('contacts/', include('contacts.urls')),
     path('api-auth/', include('rest_framework.urls')),
     url(r'^api/listings/', include('listings.api.urls')),
-    path('admin/', admin.site.urls),]
+    path('admin/', admin.site.urls),
+    path('jet_api/', include('jet_django.urls')),
+]
 
 urlpatterns = urlpatterns + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
