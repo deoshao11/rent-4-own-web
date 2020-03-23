@@ -49,8 +49,8 @@ INSTALLED_APPS = [
     'jet_django',
 ]
 
-JET_PROJECT = 'sunyi_jet'
-JET_TOKEN = 'c8ee7006-cf9c-4421-84a7-8ca3c6439795'
+JET_PROJECT = 'garden_star_project'
+JET_TOKEN = 'cdbe501f-9657-4c02-b04f-93b56573453d'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
