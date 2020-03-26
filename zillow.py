@@ -1,4 +1,6 @@
+from datetime import datetime
 from urllib.request import Request, urlopen
+from re import sub
 from lxml import html
 import requests
 import unicodecsv as csv
@@ -27,11 +29,11 @@ def create_url(zipcode, filter):
     # Creating Zillow URL based on the filter.
 
     if filter == "newest":
-        url = "https://www.zillow.com/homes/for_sale/{0}/0_singlestory/days_sort".format(zipcode)
+        url = "https://www.zillow.com/homes/for_rent/{0}/0_singlestory/days_sort".format(zipcode)
     elif filter == "cheapest":
-        url = "https://www.zillow.com/homes/for_sale/{0}/0_singlestory/pricea_sort/".format(zipcode)
+        url = "https://www.zillow.com/homes/for_rent/{0}/0_singlestory/pricea_sort/".format(zipcode)
     else:
-        url = "https://www.zillow.com/homes/for_sale/{0}_rb/?fromHomePage=true&shouldFireSellPageImplicitClaimGA=false&fromHomePageTab=buy".format(zipcode)
+        url = "https://www.zillow.com/homes/for_rent/{0}_rb/?fromHomePage=true&shouldFireSellPageImplicitClaimGA=false&fromHomePageTab=buy".format(zipcode)
     print(url)
     return url
 
@@ -45,9 +47,11 @@ def save_to_file(response):
 
 def write_data_to_csv(data):
     # saving scraped data to csv.
+    # heroku pg:psql -c "\copy listings_listing(title, address, city, state, zipcode, description, price, bedrooms, bathrooms, sqft, lot_size, photo_main, is_published, list_date, realtor_id) from 'rent-properties-07112-2020-03-25.csv' DELIMITER ',' CSV HEADER"
 
-    with open("properties-%s.csv" % (zipcode), 'wb') as csvfile:
-        fieldnames = ['title', 'address', 'city', 'state', 'postal_code', 'price', 'facts and features', 'real estate provider', 'url']
+    with open("rent-properties-%s-%s.csv" % (zipcode, datetime.today().strftime('%Y-%m-%d')), 'wb') as csvfile:
+        fieldnames = ['title', 'address', 'city', 'state', 'zipcode', 'facts and features', 'price', 'bedrooms', 'bathrooms', 'sqft',
+            'lot_size', 'photo_main', 'is_published', 'list_date', 'realtor_id']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for row in data:
@@ -78,32 +82,49 @@ def get_data_from_json(raw_json_data):
     try:
         json_data = json.loads(cleaned_data)
         search_results = json_data.get('searchResults').get('listResults', [])
+        count = 0
 
         for properties in search_results:
-            address = properties.get('addressWithZip')
+            print("processing result", count, properties)
+            zpid = properties.get('zpid')
+            if not zpid.isdigit():
+                continue
+
+            address = properties.get('address')
             property_info = properties.get('hdpData', {}).get('homeInfo')
             city = property_info.get('city')
             state = property_info.get('state')
-            postal_code = property_info.get('zipcode')
-            price = properties.get('price')
+            zipcode = property_info.get('zipcode')
+            lot_size = property_info.get('lotSize')
+            price = int(sub(r'[^\d.]', '', properties.get('price')))
             bedrooms = properties.get('beds')
             bathrooms = properties.get('baths')
             area = properties.get('area')
-            info = f'{bedrooms} bds, {bathrooms} ba ,{area} sqft'
             broker = properties.get('brokerName')
             property_url = properties.get('detailUrl')
+            info = f'{bedrooms} bds,{bathrooms} ba,{area} sqft,{property_url}'
             title = properties.get('statusText')
+            photo_main = properties.get('imgSrc')
+
 
             data = {'address': address,
                     'city': city,
                     'state': state,
-                    'postal_code': postal_code,
+                    'zipcode': zipcode,
                     'price': price,
+                    'bedrooms': bedrooms,
+                    'bathrooms': bathrooms,
+                    'sqft': area,
+                    'lot_size': lot_size,
                     'facts and features': info,
-                    'real estate provider': broker,
-                    'url': property_url,
-                    'title': title}
+                    'title': title,
+                    'photo_main': photo_main,
+                    'is_published': False, #set this as false for now
+                    'list_date': datetime.today().strftime('%Y-%m-%d'),
+                    'realtor_id': 3}
             properties_list.append(data)
+
+            count = count + 1
 
         return properties_list
 

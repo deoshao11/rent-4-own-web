@@ -47,6 +47,6 @@ vs/*
 # Mac
 .DS_Store
 
-# WeK8 & Vault related files
-vaulttoken
-k8s-token
+# CSV
+*csv
+
