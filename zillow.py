@@ -83,13 +83,14 @@ def get_data_from_json(raw_json_data):
         json_data = json.loads(cleaned_data)
         search_results = json_data.get('searchResults').get('listResults', [])
         count = 0
+        print("how many results we are processing?", len(search_results))
 
         for properties in search_results:
-            print("processing result", count, properties)
+            #print("processing result", count, properties)
             zpid = properties.get('zpid')
             if not zpid.isdigit():
+                #print("invalid result", properties)
                 continue
-
             address = properties.get('address')
             property_info = properties.get('hdpData', {}).get('homeInfo')
             city = property_info.get('city')
@@ -119,7 +120,7 @@ def get_data_from_json(raw_json_data):
                     'facts and features': info,
                     'title': title,
                     'photo_main': photo_main,
-                    'is_published': False, #set this as false for now
+                    'is_published': True, #set this as false for now
                     'list_date': datetime.today().strftime('%Y-%m-%d'),
                     'realtor_id': 3}
             properties_list.append(data)
@@ -142,7 +143,6 @@ def parse(zipcode, filter=None):
         return None
 
     # These two new lines are added
-    print('is it here?')
     req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     webpage = urlopen(req).read()
 

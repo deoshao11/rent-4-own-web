@@ -67,4 +67,4 @@ def search(request):
     'values': request.GET
   }
 
-  return render(request, 'listings/search.html', context)
+  return render(request, 'listings/listing.html', context)
