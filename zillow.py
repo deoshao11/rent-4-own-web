@@ -6,6 +6,7 @@ import requests
 import unicodecsv as csv
 import argparse
 import json
+import re
 
 
 def clean(text):
@@ -29,7 +30,7 @@ def create_url(zipcode, filter):
     # Creating Zillow URL based on the filter.
 
     if filter == "newest":
-        url = "https://www.zillow.com/homes/for_rent/{0}/0_singlestory/days_sort".format(zipcode)
+        url = "https://www.zillow.com/homes/for_rent/{0}/0_singlestory/days_sort/".format(zipcode)
     elif filter == "cheapest":
         url = "https://www.zillow.com/homes/for_rent/{0}/0_singlestory/pricea_sort/".format(zipcode)
     else:
@@ -82,14 +83,18 @@ def get_data_from_json(raw_json_data):
     try:
         json_data = json.loads(cleaned_data)
         search_results = json_data.get('searchResults').get('listResults', [])
+        print(json_data.get('searchPageSeoObject'))
+        total_listing = int(re.search(r'\d+', json_data.get('searchPageSeoObject').get('windowTitle').split('-')[1]).group())
         count = 0
-        print("how many results we are processing?", len(search_results))
+        result_size = len(search_results)
+        print("how many results we are processing?", result_size)
 
         for properties in search_results:
             #print("processing result", count, properties)
             zpid = properties.get('zpid')
-            if not zpid.isdigit():
-                #print("invalid result", properties)
+            statusText = properties.get('statusText')
+            if not zpid.isdigit() or statusText == 'Off market':
+                print("bypassing zillow id:", zpid, "statusText:", statusText)
                 continue
             address = properties.get('address')
             property_info = properties.get('hdpData', {}).get('homeInfo')
@@ -101,7 +106,6 @@ def get_data_from_json(raw_json_data):
             bedrooms = properties.get('beds')
             bathrooms = properties.get('baths')
             area = properties.get('area')
-            broker = properties.get('brokerName')
             property_url = properties.get('detailUrl')
             info = f'{bedrooms} bds,{bathrooms} ba,{area} sqft,{property_url}'
             title = properties.get('statusText')
@@ -127,10 +131,10 @@ def get_data_from_json(raw_json_data):
 
             count = count + 1
 
-        return properties_list
+        return total_listing, properties_list
 
     except ValueError:
-        print("Invalid json")
+        print("Invalid json", ValueError)
         return None
 
 
@@ -156,7 +160,23 @@ def parse(zipcode, filter=None):
         print("parsing from json data")
         # identified as type 2 page
         raw_json_data = parser.xpath('//script[@data-zrr-shared-data-key="mobileSearchPageStore"]//text()')
-        return get_data_from_json(raw_json_data)
+        total_listing, prop_list = get_data_from_json(raw_json_data)
+        print("total number of listing in this zipcode {0} is {1}".format(zipcode, total_listing))
+        page_num = 2
+        page_url = "{0}{1}_p/".format(url, page_num)
+        while (page_num * 40 <= total_listing or ((page_num-1) * 40 < total_listing)) and requests.get(page_url, headers=get_headers()).status_code == 200:
+            print("reading url:", page_url)
+            req = Request(page_url, headers={'User-Agent': 'Mozilla/5.0'})
+            webpage = urlopen(req).read()
+            parser = html.fromstring(webpage)
+            raw_json_data = parser.xpath('//script[@data-zrr-shared-data-key="mobileSearchPageStore"]//text()')
+            t, p_list = get_data_from_json(raw_json_data)
+            prop_list.extend(p_list)
+            page_num += 1
+            page_url = "{0}{1}_p/".format(url, page_num)
+
+        return prop_list
+
 
     print("parsing from html page")
     properties_list = []
