@@ -59,12 +59,16 @@ def search(request):
     if price:
       queryset_list = queryset_list.filter(price__lte=price)
 
+  paginator = Paginator(queryset_list, 24)
+  page = request.GET.get('page')
+  paged_listings = paginator.get_page(page)
+
   context = {
     'state_choices': state_choices,
     'bedroom_choices': bedroom_choices,
     'price_choices': price_choices,
-    'listings': queryset_list,
+    'listings': paged_listings,
     'values': request.GET
   }
 
-  return render(request, 'listings/listing.html', context)
+  return render(request, 'listings/listings.html', context)
