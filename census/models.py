@@ -12,7 +12,7 @@ class Census(models.Model):
     funcstat = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     stname = models.CharField(max_length=100)
-    census2010pop = models.IntegerField()
+    census2010pop = models.CharField(max_length=100)
     estimatebase2010 = models.IntegerField()
     popestimate2010 = models.IntegerField()
     popestimate2011 = models.IntegerField()
