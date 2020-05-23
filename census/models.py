@@ -8,7 +8,7 @@ class Census(models.Model):
     place = models.IntegerField()
     cousub = models.IntegerField()
     concit = models.IntegerField()
-    primgeo_flag = models.IntegerField
+    primgeo_flag = models.IntegerField()
     funcstat = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     stname = models.CharField(max_length=100)
