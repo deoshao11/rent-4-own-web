@@ -6,7 +6,7 @@ class Census(models.Model):
     state = models.IntegerField()
     county = models.IntegerField()
     place = models.IntegerField()
-    consub = models.IntegerField()
+    cousub = models.IntegerField()
     concit = models.IntegerField()
     primgeo_flag = models.IntegerField
     funcstat = models.CharField(max_length=100)
