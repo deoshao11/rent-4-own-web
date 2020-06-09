@@ -1,12 +1,10 @@
 from datetime import datetime
 from urllib.request import Request, urlopen
-from re import sub
 from lxml import html
 import requests
 import unicodecsv as csv
 import argparse
 import json
-import re
 
 
 def clean(text):
@@ -27,7 +25,7 @@ def get_headers():
 
 
 def create_url(zipcode, status, filter):
-    # Creating Zillow URL based on the filter.
+    # Creating Zillow URL based on the filter and status.
 
     if filter == "newest":
         url = "https://www.zillow.com/homes/{0}/{1}/0_singlestory/days_sort/".format(status, zipcode)
