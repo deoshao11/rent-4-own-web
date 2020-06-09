@@ -85,7 +85,6 @@ def get_data_from_json(raw_json_data):
         json_data = json.loads(cleaned_data)
         search_results = json_data.get('searchResults').get('listResults', [])
         print(json_data.get('searchPageSeoObject'))
-#        total_listing = int(re.search(r'\d+', json_data.get('searchPageSeoObject').get('windowTitle').split('-')[1]).group())
         total_listing = int(json_data.get('searchList').get('totalResultCount'))
         count = 0
         result_size = len(search_results)
@@ -104,7 +103,6 @@ def get_data_from_json(raw_json_data):
             state = property_info.get('state')
             zipcode = property_info.get('zipcode')
             lot_size = property_info.get('lotSize')
-#            alternate way: price = int(Decimal(sub(r'[^\d.]', '', properties.get('price'))))
             try:
                 price = int(property_info.get('price'))
             except:
@@ -246,9 +244,6 @@ if __name__ == "__main__":
     sort = args.sort
     status = args.status
     print ("Fetching data for %s" % (zipcode))
-#    zipcode = "07078"
-#    sort = "newest"
-#    status = "recently_sold"
     scraped_data = parse(zipcode, status, sort)
     if scraped_data:
         print ("Writing data to output file")
