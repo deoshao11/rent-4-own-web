@@ -1,10 +1,12 @@
 from datetime import datetime
 from urllib.request import Request, urlopen
+from re import sub
 from lxml import html
 import requests
 import unicodecsv as csv
 import argparse
 import json
+import re
 
 
 def clean(text):
@@ -24,18 +26,15 @@ def get_headers():
     return headers
 
 
-def create_url(zipcode, status, filter):
-    # Creating Zillow URL based on the filter and status.
+def create_url(zipcode, filter):
+    # Creating Zillow URL based on the filter.
 
     if filter == "newest":
-        url = "https://www.zillow.com/homes/{0}/{1}/0_singlestory/days_sort/".format(status, zipcode)
+        url = "https://www.zillow.com/homes/for_rent/{0}/0_singlestory/days_sort/".format(zipcode)
     elif filter == "cheapest":
-        if status == "for_rent":
-            url == "https://www.zillow.com/homes/{0}/{1}/0_singlestory/paymenta_sort/".format(status, zipcode)
-        else:
-            url = "https://www.zillow.com/homes/{0}/{1}/0_singlestory/pricea_sort/".format(status, zipcode)
+        url = "https://www.zillow.com/homes/for_rent/{0}/0_singlestory/pricea_sort/".format(zipcode)
     else:
-        url = "https://www.zillow.com/homes/{0}/{1}/0_singlestory/featured_sort/".format(status, zipcode)
+        url = "https://www.zillow.com/homes/for_rent/{0}_rb/?fromHomePage=true&shouldFireSellPageImplicitClaimGA=false&fromHomePageTab=buy".format(zipcode)
     print(url)
     return url
 
@@ -47,11 +46,11 @@ def save_to_file(response):
         fp.write(response.text)
 
 
-def write_data_to_csv(data, status):
+def write_data_to_csv(data):
     # saving scraped data to csv.
     # heroku pg:psql -c "\copy listings_listing(title, address, city, state, zipcode, description, price, bedrooms, bathrooms, sqft, lot_size, photo_main, is_published, list_date, realtor_id) from 'rent-properties-07112-2020-03-25.csv' DELIMITER ',' CSV HEADER"
 
-    with open("%s-properties-%s-%s.csv" % (status, zipcode, datetime.today().strftime('%Y-%m-%d')), 'wb') as csvfile:
+    with open("rent-properties-%s-%s.csv" % (zipcode, datetime.today().strftime('%Y-%m-%d')), 'wb') as csvfile:
         fieldnames = ['title', 'address', 'city', 'state', 'zipcode', 'facts and features', 'price', 'bedrooms', 'bathrooms', 'sqft',
             'lot_size', 'photo_main', 'is_published', 'list_date', 'realtor_id']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -85,10 +84,10 @@ def get_data_from_json(raw_json_data):
         json_data = json.loads(cleaned_data)
         search_results = json_data.get('searchResults').get('listResults', [])
         print(json_data.get('searchPageSeoObject'))
-        total_listing = int(json_data.get('searchList').get('totalResultCount'))
+        total_listing = int(re.search(r'\d+', json_data.get('searchPageSeoObject').get('windowTitle').split('-')[1]).group())
         count = 0
         result_size = len(search_results)
-        print("how many results are we processing?", result_size)
+        print("how many results we are processing?", result_size)
 
         for properties in search_results:
             #print("processing result", count, properties)
@@ -103,10 +102,7 @@ def get_data_from_json(raw_json_data):
             state = property_info.get('state')
             zipcode = property_info.get('zipcode')
             lot_size = property_info.get('lotSize')
-            try:
-                price = int(property_info.get('price'))
-            except:
-                price = 0
+            price = int(sub(r'[^\d.]', '', properties.get('price')))
             bedrooms = properties.get('beds')
             bathrooms = properties.get('baths')
             area = properties.get('area')
@@ -142,8 +138,8 @@ def get_data_from_json(raw_json_data):
         return None
 
 
-def parse(zipcode, status, filter=None):
-    url = create_url(zipcode, status, filter)
+def parse(zipcode, filter=None):
+    url = create_url(zipcode, filter)
     response = get_response(url)
 
     if not response:
@@ -230,21 +226,13 @@ if __name__ == "__main__":
     newest : Latest property details,
     cheapest : Properties with cheapest price
     """
-    status_help = """
-    available home statuses are :
-    for_rent : homes for rent
-    for_sale : homes for sale
-    recently_sold : homes already sold
-    """
 
     argparser.add_argument('sort', nargs='?', help=sortorder_help, default='Homes For You')
-    argparser.add_argument('status', help=status_help)
     args = argparser.parse_args()
     zipcode = args.zipcode
     sort = args.sort
-    status = args.status
     print ("Fetching data for %s" % (zipcode))
-    scraped_data = parse(zipcode, status, sort)
+    scraped_data = parse(zipcode, sort)
     if scraped_data:
         print ("Writing data to output file")
-        write_data_to_csv(scraped_data, status)
+        write_data_to_csv(scraped_data)
