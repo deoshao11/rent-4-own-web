@@ -76,7 +76,6 @@ def get_response(url):
 
 def get_data_from_json(raw_json_data):
     # getting data from json (type 2 of their A/B testing page)
-
     cleaned_data = clean(raw_json_data).replace('<!--', "").replace("-->", "")
     properties_list = []
 
@@ -145,14 +144,12 @@ def parse(zipcode, filter=None):
     if not response:
         print("Failed to fetch the page, please check `response.html` to see the response received from zillow.com.")
         return None
+    parser = html.fromstring(response.text)
 
-    # These two new lines are added
-    req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    webpage = urlopen(req).read()
-
-    #replace the parser to take input added above
-    #parser = html.fromstring(response.text)
-    parser = html.fromstring(webpage)
+    # replace the parser to take input added above if bot detection evolved again
+    #req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    #webpage = urlopen(req).read()
+    #parser = html.fromstring(webpage)
 
     search_results = parser.xpath("//div[@id='search-results']//article")
 
@@ -166,9 +163,11 @@ def parse(zipcode, filter=None):
         page_url = "{0}{1}_p/".format(url, page_num)
         while (page_num * 40 <= total_listing or ((page_num-1) * 40 < total_listing)) and requests.get(page_url, headers=get_headers()).status_code == 200:
             print("reading url:", page_url)
-            req = Request(page_url, headers={'User-Agent': 'Mozilla/5.0'})
-            webpage = urlopen(req).read()
-            parser = html.fromstring(webpage)
+            response = get_response(page_url)
+            parser = html.fromstring(response.text)
+            # req = Request(page_url, headers={'User-Agent': 'Mozilla/5.0'})
+            # webpage = urlopen(req).read()
+            # parser = html.fromstring(webpage)
             raw_json_data = parser.xpath('//script[@data-zrr-shared-data-key="mobileSearchPageStore"]//text()')
             t, p_list = get_data_from_json(raw_json_data)
             prop_list.extend(p_list)
